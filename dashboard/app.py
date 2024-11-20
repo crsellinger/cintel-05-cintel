@@ -2,92 +2,69 @@
 # Caleb Sellinger
 # 44630 Cont Intel
 # Dr. Case
-# 11-4-2024
+# 11-19-2024
 ################################
 
-import plotly.express as px
-from shiny.express import input, ui
-from shiny import render, reactive
-from shinywidgets import render_plotly
-import palmerpenguins
-import seaborn
-import pandas
+from shiny import reactive, render
+from shiny.express import ui
+import random
+from datetime import datetime
+from faicons import icon_svg
 
-#Penguins data set
-penguins_df = palmerpenguins.load_penguins()
+# --------------------------------------------
+# First, set a constant UPDATE INTERVAL for all live data
+# Constants are usually defined in uppercase letters
+# Use a type hint to make it clear that it's an integer (: int)
+# --------------------------------------------
+UPDATE_INTERVAL_SECS: int = 1
+# --------------------------------------------
 
-#Page options, specifically title
-ui.page_opts(title="Caleb Sellinger - Module 2: Palmer Penguins Data", fillable=True)
+@reactive.calc()
+def reactive_calc_combined():
 
-#Reactive Calculations
-@reactive.calc
-#filter species
-def filtered_data():
-    selected_species = input.selected_species_list()
-    
-    if selected_species:
-        filtered = penguins_df[penguins_df["species"].isin(selected_species)]
-        
-    return filtered
+    # Invalidate this calculation every UPDATE_INTERVAL_SECS to trigger updates
+    reactive.invalidate_later(UPDATE_INTERVAL_SECS)
 
-@reactive.calc
-#fitler columns
-def filtered_data_2():
-    selected_columns = input.selected_columns()
+    # Data generation logic. Get random between -18 and -16 C, rounded to 1 decimal place
+    temp = round(random.uniform(-18, -16), 2)
 
-    if selected_columns:
-        filtered = pandas.DataFrame(penguins_df).filter(items=list(selected_columns),axis=1)
+    # Get a timestamp for "now" and use string format strftime() method to format it
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    else:
-        return penguins_df
+    latest_dictionary_entry = {"temp": temp, "timestamp": timestamp}
 
-    return filtered
-    
-#column component
-with ui.layout_columns():
-    #card componenet for Data Table
-    with ui.card(full_screen=True):
-        ui.h2("Penguins Data Table")
-        #Data Table
-        @render.data_frame
-        def penguins_datatable():
-            return render.DataTable(filtered_data_2())
+    # Return everything we need
+    return latest_dictionary_entry
 
-    #Card component for Data Grid
-    with ui.card(full_screen=True):
-        ui.h2("Penguin Data Grid")
-        #Data Grid
-        @render.data_frame
-        def penguins_datagrid():
-            return render.DataGrid(filtered_data())
+# Page options
+ui.page_opts(title="PyShiny Express: Live Data (Basic)", fillable=True)
 
-#column component
-with ui.layout_columns():
+# Sidebar
+with ui.sidebar(open="open"):
+    ui.h2("Antarctic Explorer", class_="text-center")
+    ui.p(
+        "A demonstration of real-time temperature readings in Antarctica.",
+        class_="text-center",
+    )
 
-    @render.plot(alt="Seaborn histogram plot")
-    def plot3():
-        return seaborn.histplot(data=penguins_df,x="species",y="body_mass_g",bins=input.seaborn_bin_count())
-    
-    @render_plotly
-    def plot4():
-        return px.histogram(data_frame=penguins_df,x="flipper_length_mm",y="body_mass_g",nbins=input.selected_number_of_bins())
+ui.h2("Current Temperature")
 
-#Card component for scatter plot
-with ui.card(full_screen=True):
-    ui.card_header("Plotly Scatterplot: Species")
+@render.text
+def display_temp():
+    """Get the latest reading and return a temperature string"""
+    latest_dictionary_entry = reactive_calc_combined()
+    return f"{latest_dictionary_entry['temp']} C"
 
-    #Scatter plot for penguins data
-    @render_plotly
-    def plot5():
-        return px.scatter(filtered_data(),x="flipper_length_mm",y="body_mass_g",color="species",title="Body Mass vs Flipper Length",labels={"body_mass_g":"Body Mass (g)","f1lipper_length_mm":"Flipper Length (mm)","species":"Species"})
-    
-#Side bar component
-with ui.sidebar(open="open",bg="#99ccff",fillable=True):
-    ui.input_dark_mode(mode="light")
-    ui.h2("Sidebar")
-    ui.input_checkbox_group("selected_species_list","Select Species (Plot 1 & 2)",choices=["Adelie","Gentoo","Chinstrap"],selected=["Adelie","Gentoo","Chinstrap"],inline=False)
-    ui.input_slider("seaborn_bin_count","Seaborn Slider (Plot 3)",0,150,50)
-    ui.input_numeric(id="selected_number_of_bins",label="Select Number of Bins (Plot4)",value=10)
-    ui.input_selectize(id="selected_columns",label="Select Column to Display",choices=["island","bill_length_mm","bill_depth_mm","flipper_length_mm","body_mass_g","sex","year"],selected=["species","island","bill_length_mm","bill_depth_mm","flipper_length_mm","body_mass_g","sex","year"],multiple=True)
-    ui.hr()
-    ui.a("Link HERE",href="https://github.com/crsellinger/cintel-02-data",target="_blank")
+ui.p("warmer than usual")
+
+icon_svg("sun")
+
+ui.hr()
+
+ui.h2("Current Date and Time")
+
+@render.text
+def display_time():
+    """Get the latest reading and return a timestamp string"""
+    latest_dictionary_entry = reactive_calc_combined()
+    return f"{latest_dictionary_entry['timestamp']}"
