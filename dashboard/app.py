@@ -63,7 +63,7 @@ def reactive_calc_combined():
     reactive.invalidate_later(UPDATE_INTERVAL_SECS)
 
     # Data generation logic
-    temp = round(random.uniform(-18, -16), 1)
+    temp = round(random.uniform(-18, -16), 2)
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     new_dictionary_entry = {"temp":temp, "timestamp":timestamp}
 
@@ -149,7 +149,12 @@ with ui.layout_columns():
 
 with ui.layout_columns():
     with ui.card():
-        ui.card_header("Current Data (placeholder only)")
+        ui.card_header("Today's Temperature Readings")
+        @render.data_frame
+        def data_grid():
+            deque_snapshot, df, latest_dictionary_entry = reactive_calc_combined()
+            return render.DataGrid(df,width="100%",height="auto")
+            
 
 with ui.layout_columns():
     with ui.card():
