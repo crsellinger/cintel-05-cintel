@@ -61,7 +61,7 @@ def reactive_calc_combined():
     reactive.invalidate_later(UPDATE_INTERVAL_SECS)
 
     # Data generation logic
-    temp = round(random.uniform(-18, -16), 1)
+    temp = round(random.uniform(-18, -16), 2)
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     new_dictionary_entry = {"temp":temp, "timestamp":timestamp}
 
@@ -128,9 +128,6 @@ with ui.layout_columns():
             """Get the latest reading and return a temperature string"""
             deque_snapshot, df, latest_dictionary_entry = reactive_calc_combined()
             return f"{latest_dictionary_entry['temp']} C"
-
-        "warmer than usual"
-
   
 
     with ui.card(full_screen=True):
@@ -140,20 +137,34 @@ with ui.layout_columns():
         def display_time():
             """Get the latest reading and return a timestamp string"""
             deque_snapshot, df, latest_dictionary_entry = reactive_calc_combined()
-            return f"{latest_dictionary_entry['timestamp']}"
+
+            # Change Date/Time in second card to be more readable
+            newTimeFormat = latest_dictionary_entry['timestamp']
+            newTimeFormat = datetime.now().strftime("%b. %d, %Y %H:%M:%S %p")
+            return f"{newTimeFormat}"
 
 
-#with ui.card(full_screen=True, min_height="40%"):
-with ui.card(full_screen=True):
-    ui.card_header("Most Recent Readings")
 
-    @render.data_frame
-    def display_df():
-        """Get the latest reading and return a dataframe with current readings"""
-        deque_snapshot, df, latest_dictionary_entry = reactive_calc_combined()
-        pd.set_option('display.width', None)        # Use maximum width
-        return render.DataGrid( df,width="100%")
 
+with ui.layout_columns():
+    # with ui.card(full_screen=True, min_height="40%"):
+    with ui.card(full_screen=True):
+        ui.card_header("Most Recent Readings")
+
+        @render.data_frame
+        def display_df():
+            """Get the latest reading and return a dataframe with current readings"""
+            deque_snapshot, df, latest_dictionary_entry = reactive_calc_combined()
+            pd.set_option('display.width', None)        # Use maximum width
+            return render.DataGrid( df,width="100%")
+    
+    with ui.card():
+            ui.card_header("Violin Plot of Temperature Distribution")
+            @render_plotly
+            def violin():
+                deque_snapshot, df, latest_dictionary_entry = reactive_calc_combined()
+                return px.violin(df,x="temp")
+            
 with ui.card():
     ui.card_header("Chart with Current Trend")
 
@@ -176,7 +187,7 @@ with ui.card():
                 y="temp",
                 title="Temperature Readings with Regression Line",
                 labels={"temp": "Temperature (°C)", "timestamp": "Time"},
-                color_discrete_sequence=["blue"] )
+                color_discrete_sequence=["blue"])
             
             # Linear regression - we need to get a list of the
             # Independent variable x values (time) and the
