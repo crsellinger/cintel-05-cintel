@@ -1,9 +1,8 @@
 faicons
-palmerpenguins
 pandas
 pyarrow
 plotly
-seaborn
+scipy
 shiny
 shinylive
 shinywidgets
