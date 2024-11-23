@@ -16,6 +16,12 @@ from collections import deque
 # Import pandas for working with data
 import pandas as pd
 
+# Plotly for scatter plot
+import plotly.express as px
+
+# Display for scatter plot
+from shinywidgets import render_plotly
+
 # --------------------------------------------
 # Import icons as you like
 # --------------------------------------------
@@ -158,4 +164,13 @@ with ui.layout_columns():
 
 with ui.layout_columns():
     with ui.card():
-        ui.card_header("Current Chart (placeholder only)")
+        ui.card_header("Today's Temperature Chart")
+        @render_plotly
+        def scatter():
+            deque_snapshot, df, latest_dictionary_entry = reactive_calc_combined()
+
+             # Ensure the DataFrame contains data before plotting
+            if not df.empty:
+                df["timestamp"] = pd.to_datetime(df["timestamp"])
+
+            return px.scatter(df,x="timestamp",y="temp",labels={"timestamp":"Time (hh:mm:ss)","temp":"Temp (C)"})
